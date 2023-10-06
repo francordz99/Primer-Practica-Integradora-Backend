@@ -32,7 +32,7 @@ const productSchema = new Schema({
 const Product = mongoose.model('Product', productSchema);
 
 // Conecta con la base de datos
-mongoose.connect('mongodb+srv://testrdz32:z0n3T7msJnV2nKLA@clusterbackend.unryogc.mongodb.net/ecommerce?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://mongodb.net/ecommerce?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
