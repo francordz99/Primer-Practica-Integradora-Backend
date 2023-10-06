@@ -16,7 +16,7 @@ class ProductsManager {
 
     async writeProductsToDatabase(products) {
         try {
-            await ProductModel.create(products);
+            await ProductModel.insertMany(products);
         } catch (error) {
             console.error("Error al escribir productos en la base de datos:", error);
             throw error;
@@ -47,7 +47,8 @@ class ProductsManager {
 
     async getProductById(id) {
         try {
-            return await ProductModel.findOne({ _id: id });
+            const objectId = new ObjectId(id);
+            return await ProductModel.findOne({ _id: objectId });
         } catch (error) {
             console.error("Error al obtener producto por ID:", error);
             throw error;
@@ -57,7 +58,6 @@ class ProductsManager {
     async updateProduct(id, updatedFields) {
         try {
             const objectId = new ObjectId(id);
-
             const updatedProduct = await ProductModel.findOneAndUpdate(
                 { _id: objectId },
                 { $set: updatedFields },
@@ -71,14 +71,43 @@ class ProductsManager {
         }
     }
 
+    async updateProductByCode(code, updatedFields) {
+        try {
+            const updatedProduct = await ProductModel.findOneAndUpdate(
+                { code: code },
+                { $set: updatedFields },
+                { new: true }
+            );
+
+            return updatedProduct;
+        } catch (error) {
+            console.error("Error al actualizar producto:", error);
+            throw error;
+        }
+    }
+
+
     async deleteProduct(id) {
         try {
-            await ProductModel.deleteOne({ _id: id });
+            const objectId = new ObjectId(id);
+            await ProductModel.deleteOne({ _id: objectId });
+        } catch (error) {
+            console.error("Error al eliminar producto:", error);
+            throw error;
+        }
+    }
+
+    async deleteProductByCode(code) {
+        try {
+            await ProductModel.findOneAndDelete({ code: code });
         } catch (error) {
             console.error("Error al eliminar producto:", error);
             throw error;
         }
     }
 }
+
+
+
 
 module.exports = ProductsManager;

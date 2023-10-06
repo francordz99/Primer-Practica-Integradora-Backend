@@ -1,53 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const CartManager = require('../../dao/mongodb/cartManager');
+const cartManager = require('../../dao/mongodb/cartManager');
 
+// Ruta para crear un carrito
 router.post('/', async (req, res) => {
     try {
-        const cartId = CartManager.generateUniqueCartId();
-
-        const newCart = {
-            id: cartId,
-            products: []
-        };
-
-        await CartManager.addCartToStorage(newCart);
-
-        res.status(201).json({ message: 'Carrito creado con éxito.', cart: newCart });
+        const { id, products } = req.body;
+        const newCart = await cartManager.addCart(id, products);
+        res.status(201).json(newCart);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al crear el carrito.' });
+        res.status(400).json({ error: error.message });
     }
 });
 
-router.get('/:cid', async (req, res) => {
+// Ruta para obtener un carrito por ID
+router.get('/:cartId', async (req, res) => {
     try {
-        const { cid } = req.params;
-        const cart = await CartManager.getCartById(cid);
-
-        if (!cart) {
-            return res.status(404).json({ error: 'Carrito no encontrado o inexistente.' });
-        }
-
-        res.json(cart.products);
+        const cartId = req.params.cartId;
+        const cart = await cartManager.getCartById(cartId);
+        res.status(200).json(cart);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener los productos del carrito.' });
+        res.status(404).json({ error: error.message });
     }
 });
 
-router.post('/:cid/product/:pid', async (req, res) => {
+// Ruta para agregar un producto a un carrito
+router.put('/:cartId/add-product', async (req, res) => {
     try {
-        const { cid, pid } = req.params;
-
-        await CartManager.addProductToCart(cid, pid);
-
-        // io.emit('updateCarts');
-
-        res.json({ message: 'Producto agregado al carrito con éxito.' });
+        const cartId = req.params.cartId;
+        const product = req.body.product;
+        const updatedCart = await cartManager.addProductToCart(cartId, product);
+        res.status(200).json(updatedCart);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al agregar el producto al carrito.' });
+        res.status(400).json({ error: error.message });
     }
 });
 

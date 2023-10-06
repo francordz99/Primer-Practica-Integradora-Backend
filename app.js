@@ -27,6 +27,7 @@ app.use(express.json());
 app.use(express.static('public'));
 app.use('/api/carts', cartRouter);
 app.use('/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 app.use(bodyParser.json());
 
 app.engine('.hbs', engine({ extname: '.hbs' }));
@@ -97,6 +98,10 @@ app.get("/realtime", async (req, res) => {
 
 app.get("/chat", (req, res) => {
     res.render('chat');
+});
+
+app.get("/carts", (req, res) => {
+    res.render('carts');
 });
 
 // Rutas mensajes
@@ -236,10 +241,8 @@ app.delete('/products/:pid', async (req, res) => {
 
 cartRouter.post('/', (req, res) => {
     try {
-        const cartId = generateUniqueCartId();
 
         const newCart = {
-            id: cartId,
             products: []
         };
 

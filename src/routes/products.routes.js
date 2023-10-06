@@ -55,32 +55,35 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.put('/:pid', async (req, res) => {
+router.put('/:productCode', async (req, res) => {
     try {
-        const { pid } = req.params;
+        const productCode = req.params.productCode;
         const updatedFields = req.body;
 
-        const updatedProduct = await productsManager.updateProduct(parseInt(pid), updatedFields);
-        if (updatedProduct) {
-            res.json({ message: 'Producto actualizado con éxito.' });
-        } else {
-            res.status(404).json({ error: 'Producto no encontrado o inexistente.' });
+        if (Object.keys(updatedFields).length === 0) {
+            return res.status(400).json({ error: 'Ningún campo proporcionado para actualizar.' });
         }
+
+        // Llama a la función para actualizar por código
+        await productsManager.updateProductByCode(productCode, updatedFields);
+        res.status(200).json({ message: 'Producto actualizado con éxito.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al actualizar el producto.' });
     }
 });
-
-router.delete('/:pid', async (req, res) => {
+router.delete('/by-code/:productCode', async (req, res) => {
     try {
-        const { pid } = req.params;
-        await productsManager.deleteProduct(parseInt(pid));
+        const productCode = req.params.productCode;
+
+        await productsManager.deleteProductByCode(productCode);
+
         res.json({ message: 'Producto eliminado con éxito.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al eliminar el producto.' });
     }
 });
+
 
 module.exports = router;
