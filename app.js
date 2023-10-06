@@ -7,11 +7,10 @@ const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 const { connectDB } = require('./src/config/dbConnect');
-const { ProductsManager } = require('./dao/mongodb/productManager.js');
+const ProductsManager = require('./dao/mongodb/productManager.js');
 const MessageManager = require('./dao/mongodb/messageManager.js');
 const { CartManager } = require('./dao/mongodb/cartManager.js');
 const messageManager = new MessageManager();
-const productRoutes = require('./src/routes/products.routes');
 
 const app = express();
 const port = 8080;
@@ -19,6 +18,10 @@ const server = http.createServer(app);
 const io = socketIo(server);
 const path = require('path');
 const cartRouter = express.Router();
+
+const productRoutes = require('./src/routes/products.routes');
+const cartRoutes = require('./src/routes/carts.routes');
+const messageRoutes = require('./src/routes/messages.routes');
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -33,14 +36,6 @@ app.set('views', './views');
 // MongoDB
 
 connectDB();
-
-const productRoutes = require('./src/routes/products.routes');
-const cartRoutes = require('./src/routes/carts.routes');
-const messageRoutes = require('./src/routes/messages.routes');
-
-app.use('/products', productRoutes);
-app.use('/carts', cartRoutes);
-app.use('/messages', messageRoutes);
 
 // Socket IO
 
@@ -74,7 +69,6 @@ io.on('connection', (socket) => {
     });
 });
 
-
 // Rutas Handlebars
 
 app.get("/", async (req, res) => {
@@ -105,10 +99,7 @@ app.get("/chat", (req, res) => {
     res.render('chat');
 });
 
-
 // Rutas mensajes
-
-
 
 app.get('/api/messages', async (req, res) => {
     try {
@@ -129,11 +120,11 @@ app.post('/api/messages', async (req, res) => {
     }
 });
 
-// Rutas de products :
+// Rutas de products
 
 app.get('/products', async (req, res) => {
     try {
-        const productManager = new ProductManager('./dao/filesystem/products.json');
+        const productManager = new ProductsManager();
         const { limit } = req.query;
         const products = await productManager.getProducts();
 
@@ -151,7 +142,7 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./dao/filesystem/products.json');
+        const productManager = new ProductsManager();
         const { pid } = req.params;
         const product = await productManager.getProductById(parseInt(pid));
 
@@ -166,9 +157,9 @@ app.get('/products/:pid', async (req, res) => {
     }
 });
 
-app.post('/', async (req, res) => {
+app.post('/products', async (req, res) => {
     try {
-        const productManager = new ProductManager('./dao/filesystem/products.json');
+        const productManager = new ProductsManager();
         const { title, description, code, price, stock, category, thumbnails } = req.body;
 
         if (!title || !description || !code || !price || !stock || !category) {
@@ -186,7 +177,7 @@ app.post('/', async (req, res) => {
             thumbnails: thumbnails || [],
         };
 
-        productManager.addProduct(newProduct);
+        await productManager.addProduct(newProduct);
 
         io.emit('updateProducts');
 
@@ -197,9 +188,9 @@ app.post('/', async (req, res) => {
     }
 });
 
-app.put('/:pid', async (req, res) => {
+app.put('/products/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./dao/filesystem/products.json');
+        const productManager = new ProductsManager();
         const { pid } = req.params;
         const updatedFields = req.body;
 
@@ -211,7 +202,7 @@ app.put('/:pid', async (req, res) => {
 
         delete updatedFields.id;
 
-        productManager.updateProduct(parseInt(pid), updatedFields);
+        await productManager.updateProduct(parseInt(pid), updatedFields);
         io.emit('updateProducts');
         res.json({ message: 'Producto actualizado con éxito.' });
     } catch (error) {
@@ -220,9 +211,9 @@ app.put('/:pid', async (req, res) => {
     }
 });
 
-app.delete('/:pid', async (req, res) => {
+app.delete('/products/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./dao/filesystem/products.json');
+        const productManager = new ProductsManager();
         const { pid } = req.params;
 
         const product = await productManager.getProductById(parseInt(pid));
@@ -231,7 +222,7 @@ app.delete('/:pid', async (req, res) => {
             return res.status(404).json({ error: 'Producto no encontrado o inexistente.' });
         }
 
-        productManager.deleteProduct(parseInt(pid));
+        await productManager.deleteProduct(parseInt(pid));
 
         io.emit('updateProducts');
         res.json({ message: 'Producto eliminado con éxito.' });
@@ -241,7 +232,7 @@ app.delete('/:pid', async (req, res) => {
     }
 });
 
-// Rutas del carrito : 
+// Rutas del carrito
 
 cartRouter.post('/', (req, res) => {
     try {

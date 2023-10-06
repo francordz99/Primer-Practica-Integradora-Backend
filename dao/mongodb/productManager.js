@@ -1,4 +1,5 @@
 const ProductModel = require('../models/productModel');
+const { ObjectId } = require('mongoose').Types;
 
 class ProductsManager {
     constructor() {
@@ -24,11 +25,11 @@ class ProductsManager {
 
     async addProduct(product) {
         try {
-            const lastProduct = await ProductModel.findOne().sort({ id: -1 });
-            const lastProductId = lastProduct ? lastProduct.id : 0;
-            product.id = lastProductId + 1;
-            product.code = `CODE${product.id.toString().padStart(3, '0')}`;
-            await Product.create(product);
+            const lastProduct = await ProductModel.findOne().sort({ _id: -1 });
+            const lastProductObjectId = lastProduct ? lastProduct._id : null;
+            product.code = `CODE${lastProductObjectId ? lastProductObjectId.toString().padStart(3, '0') : '001'}`;
+            delete product.id;
+            await ProductModel.create(product);
         } catch (error) {
             console.error("Error al agregar un producto:", error);
             throw error;
@@ -46,7 +47,7 @@ class ProductsManager {
 
     async getProductById(id) {
         try {
-            return await ProductModel.findOne({ id });
+            return await ProductModel.findOne({ _id: id });
         } catch (error) {
             console.error("Error al obtener producto por ID:", error);
             throw error;
@@ -55,7 +56,14 @@ class ProductsManager {
 
     async updateProduct(id, updatedFields) {
         try {
-            const updatedProduct = await ProductModel.findOneAndUpdate({ id }, { $set: updatedFields }, { new: true });
+            const objectId = new ObjectId(id);
+
+            const updatedProduct = await ProductModel.findOneAndUpdate(
+                { _id: objectId },
+                { $set: updatedFields },
+                { new: true }
+            );
+
             return updatedProduct;
         } catch (error) {
             console.error("Error al actualizar producto:", error);
@@ -65,7 +73,7 @@ class ProductsManager {
 
     async deleteProduct(id) {
         try {
-            await ProductModel.deleteOne({ id });
+            await ProductModel.deleteOne({ _id: id });
         } catch (error) {
             console.error("Error al eliminar producto:", error);
             throw error;
