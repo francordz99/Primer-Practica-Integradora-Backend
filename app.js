@@ -1,17 +1,19 @@
 const express = require('express');
 const { engine } = require('express-handlebars');
-const ProductManager = require('./js/ProductManager.js');
+const ProductManager = require('./dao/filesystem/ProductManager.js');
 const bodyParser = require('body-parser');
-const cartFunctions = require('./js/cartFunctions');
+const cartFunctions = require('./dao/filesystem/cartFunctions.js');
 const http = require('http');
 const socketIo = require('socket.io');
+const mongoose = require('mongoose');
+const { Cart, Message, Product } = require('./src/config/dbConnect');
+
 const app = express();
 const port = 8080;
 const server = http.createServer(app);
 const io = socketIo(server);
 const path = require('path');
 const cartRouter = express.Router();
-const { generateUniqueCartId, addCartToStorage, getCartById, addProductToCart } = require('./js/cartFunctions');
 
 app.use(express.json());
 app.use(express.static('public'));
@@ -22,6 +24,15 @@ app.engine('.hbs', engine({ extname: '.hbs' }));
 app.set('view engine', '.hbs');
 app.set('views', './views');
 
+// Conecta a la base de datos
+mongoose.connect('mongodb+srv://testrdz32:z0n3T7msJnV2nKLA@clusterbackend.unryogc.mongodb.net/ecommerce?retryWrites=true&w=majority', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+    .then(() => {
+        console.log('Conexión exitosa a la base de datos.')
+    });
+
 // Socket IO
 
 io.on('connection', (socket) => {
@@ -29,7 +40,7 @@ io.on('connection', (socket) => {
 
     socket.on('addProduct', (product) => {
         try {
-            const productManager = new ProductManager('./js/products.json');
+            const productManager = new ProductManager('./dao/filesystem/products.json');
             productManager.addProduct(product);
 
             io.emit('updateProducts');
@@ -40,7 +51,7 @@ io.on('connection', (socket) => {
 
     socket.on('deleteProduct', (productId) => {
         try {
-            const productManager = new ProductManager('./js/products.json');
+            const productManager = new ProductManager('./dao/filesystem/products.json');
             productManager.deleteProduct(productId);
 
             io.emit('updateProducts');
@@ -59,7 +70,7 @@ io.on('connection', (socket) => {
 
 app.get("/", async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const products = await productManager.getProducts();
 
         res.render("home", { products });
@@ -71,7 +82,7 @@ app.get("/", async (req, res) => {
 
 app.get("/realtime", async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const products = await productManager.getProducts();
 
         res.render("realtime", { products });
@@ -85,7 +96,7 @@ app.get("/realtime", async (req, res) => {
 
 app.get('/products', async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const { limit } = req.query;
         const products = await productManager.getProducts();
 
@@ -103,7 +114,7 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const { pid } = req.params;
         const product = await productManager.getProductById(parseInt(pid));
 
@@ -120,7 +131,7 @@ app.get('/products/:pid', async (req, res) => {
 
 app.post('/', async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const { title, description, code, price, stock, category, thumbnails } = req.body;
 
         if (!title || !description || !code || !price || !stock || !category) {
@@ -151,7 +162,7 @@ app.post('/', async (req, res) => {
 
 app.put('/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const { pid } = req.params;
         const updatedFields = req.body;
 
@@ -174,7 +185,7 @@ app.put('/:pid', async (req, res) => {
 
 app.delete('/:pid', async (req, res) => {
     try {
-        const productManager = new ProductManager('./js/products.json');
+        const productManager = new ProductManager('./dao/filesystem/products.json');
         const { pid } = req.params;
 
         const product = await productManager.getProductById(parseInt(pid));
