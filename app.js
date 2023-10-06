@@ -6,7 +6,12 @@ const cartFunctions = require('./dao/filesystem/cartFunctions.js');
 const http = require('http');
 const socketIo = require('socket.io');
 const mongoose = require('mongoose');
-const { Cart, Message, Product } = require('./src/config/dbConnect');
+const { connectDB } = require('./src/config/dbConnect');
+const { ProductsManager } = require('./dao/mongodb/productManager.js');
+const MessageManager = require('./dao/mongodb/messageManager.js');
+const { CartManager } = require('./dao/mongodb/cartManager.js');
+const messageManager = new MessageManager();
+const productRoutes = require('./src/routes/products.routes');
 
 const app = express();
 const port = 8080;
@@ -18,20 +23,24 @@ const cartRouter = express.Router();
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/api/carts', cartRouter);
+app.use('/products', productRoutes);
 app.use(bodyParser.json());
 
 app.engine('.hbs', engine({ extname: '.hbs' }));
 app.set('view engine', '.hbs');
 app.set('views', './views');
 
-// Conecta a la base de datos
-mongoose.connect('mongodb+srv://mongodb.net/ecommerce?retryWrites=true&w=majority', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => {
-        console.log('Conexión exitosa a la base de datos.')
-    });
+// MongoDB
+
+connectDB();
+
+const productRoutes = require('./src/routes/products.routes');
+const cartRoutes = require('./src/routes/carts.routes');
+const messageRoutes = require('./src/routes/messages.routes');
+
+app.use('/products', productRoutes);
+app.use('/carts', cartRoutes);
+app.use('/messages', messageRoutes);
 
 // Socket IO
 
@@ -89,6 +98,34 @@ app.get("/realtime", async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al obtener los productos en tiempo real.' });
+    }
+});
+
+app.get("/chat", (req, res) => {
+    res.render('chat');
+});
+
+
+// Rutas mensajes
+
+
+
+app.get('/api/messages', async (req, res) => {
+    try {
+        const messages = await messageManager.getAllMessages();
+        res.json(messages);
+    } catch (error) {
+        res.status(500).send('Error al obtener los mensajes.');
+    }
+});
+
+app.post('/api/messages', async (req, res) => {
+    const { sender, message } = req.body;
+    try {
+        await messageManager.addMessage(sender, message);
+        res.status(201).send('Mensaje agregado correctamente.');
+    } catch (error) {
+        res.status(500).send('Error al agregar el mensaje.');
     }
 });
 
@@ -260,3 +297,7 @@ cartRouter.post('/:cid/product/:pid', (req, res) => {
 server.listen(port, () => {
     console.log(`Servidor Express escuchando en el puerto ${port}`);
 });
+
+module.exports = {
+    ProductsManager, MessageManager, CartManager
+};
