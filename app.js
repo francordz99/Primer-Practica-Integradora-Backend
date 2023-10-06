@@ -25,7 +25,7 @@ app.set('view engine', '.hbs');
 app.set('views', './views');
 
 // Conecta a la base de datos
-mongoose.connect('mongodb+srv://testrdz32:z0n3T7msJnV2nKLA@clusterbackend.unryogc.mongodb.net/ecommerce?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://mongodb.net/ecommerce?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
