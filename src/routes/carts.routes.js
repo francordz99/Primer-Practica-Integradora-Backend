@@ -2,37 +2,40 @@ const express = require('express');
 const router = express.Router();
 const cartManager = require('../../dao/mongodb/cartManager');
 
-// Ruta para crear un carrito
+// Ruta para crear un nuevo carrito
 router.post('/', async (req, res) => {
+    const { code } = req.body;
+
     try {
-        const { id, products } = req.body;
-        const newCart = await cartManager.addCart(id, products);
-        res.status(201).json(newCart);
+        const cart = await cartManager.createCart(code);
+        res.status(201).json(cart);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 
-// Ruta para obtener un carrito por ID
-router.get('/:cartId', async (req, res) => {
+// Ruta para obtener un carrito por su código
+router.get('/:code', async (req, res) => {
+    const code = req.params.code;
+
     try {
-        const cartId = req.params.cartId;
-        const cart = await cartManager.getCartById(cartId);
-        res.status(200).json(cart);
+        const cart = await cartManager.getCartByCode(code);
+        res.json(cart);
     } catch (error) {
         res.status(404).json({ error: error.message });
     }
 });
 
 // Ruta para agregar un producto a un carrito
-router.put('/:cartId/add-product', async (req, res) => {
+router.put('/:cartId/products/:productId', async (req, res) => {
+    const cartId = req.params.cartId;
+    const productId = req.params.productId;
+
     try {
-        const cartId = req.params.cartId;
-        const product = req.body.product;
-        const updatedCart = await cartManager.addProductToCart(cartId, product);
-        res.status(200).json(updatedCart);
+        const cart = await cartManager.addProductToCart(cartId, productId);
+        res.json(cart);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 

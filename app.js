@@ -20,14 +20,14 @@ const path = require('path');
 const cartRouter = express.Router();
 
 const productRoutes = require('./src/routes/products.routes');
-const cartRoutes = require('./src/routes/carts.routes');
+const cartsRoutes = require('./src/routes/carts.routes.js');
 const messageRoutes = require('./src/routes/messages.routes');
 
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/api/carts', cartRouter);
 app.use('/products', productRoutes);
-app.use('/api/cart', cartRoutes);
+app.use('/carts', cartsRoutes);
 app.use(bodyParser.json());
 
 app.engine('.hbs', engine({ extname: '.hbs' }));

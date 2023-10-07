@@ -1,42 +1,49 @@
-const CartModel = require('../models/cartModel');
+const Cart = require('../models/cartModel');
 
-const CartManager = {
-    addCart: async (id, products) => {
-        try {
-            const cart = new CartModel({ id, products });
-            await cart.save();
-            return cart;
-        } catch (error) {
-            throw new Error('Error adding cart: ' + error.message);
-        }
-    },
-
-    getCartById: async (cartId) => {
-        try {
-            const cart = await CartModel.findById(cartId);
-            if (!cart) {
-                throw new Error('Cart not found.');
-            }
-            return cart;
-        } catch (error) {
-            throw new Error('Error getting cart by ID: ' + error.message);
-        }
-    },
-
-    addProductToCart: async (cartId, product) => {
-        try {
-            const cart = await CartModel.findById(cartId);
-            if (!cart) {
-                throw new Error('Cart not found.');
-            }
-
-            cart.products.push(product);
-            await cart.save();
-            return cart;
-        } catch (error) {
-            throw new Error('Error adding product to cart: ' + error.message);
-        }
+// Función para crear un nuevo carrito
+async function createCart(code) {
+    try {
+        const cart = new Cart({
+            code,
+            products: []
+        });
+        await cart.save();
+        return cart;
+    } catch (error) {
+        throw new Error('Error al crear el carrito: ' + error.message);
     }
-};
+}
 
-module.exports = CartManager;
+// Función para obtener un carrito por su código
+async function getCartByCode(code) {
+    try {
+        const cart = await Cart.findOne({ code }).exec();
+        if (!cart) {
+            throw new Error('Carrito no encontrado');
+        }
+        return cart;
+    } catch (error) {
+        throw new Error('Error al obtener el carrito: ' + error.message);
+    }
+}
+
+// Función para agregar un producto a un carrito
+async function addProductToCart(cartId, productId) {
+    try {
+        const cart = await Cart.findById(cartId).exec();
+        if (!cart) {
+            throw new Error('Carrito no encontrado');
+        }
+        cart.products.push(productId);
+        await cart.save();
+        return cart;
+    } catch (error) {
+        throw new Error('Error al agregar producto al carrito: ' + error.message);
+    }
+}
+
+module.exports = {
+    createCart,
+    getCartByCode,
+    addProductToCart
+};
